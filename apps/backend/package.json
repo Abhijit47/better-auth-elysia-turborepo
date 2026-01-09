@@ -10,6 +10,7 @@
     "lint": "eslint src --max-warnings 0"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/node": "latest",
     "@elysiajs/openapi": "^1.4.13",
     "dotenv": "17.2.3",
@@ -19,6 +20,8 @@
     "@types/node": "^20.10.6",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
+    "@workspace/auth": "workspace:*",
+    "@workspace/db": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.32.0",
