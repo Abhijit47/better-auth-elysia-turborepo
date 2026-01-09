@@ -1,0 +1,31 @@
+{
+  "name": "@workspace/auth",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "better-auth:generate": "pnpx @better-auth/cli generate --config ./src/server.ts --output ./src/🛡️generated-auth-schema.ts --yes"
+  },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "better-auth": "1.4.10",
+    "dotenv": "17.2.3",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "25.0.3",
+    "typescript": "latest"
+  },
+  "exports": {
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  }
+}
