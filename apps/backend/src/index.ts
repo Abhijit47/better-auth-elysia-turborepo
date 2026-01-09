@@ -1,49 +1,13 @@
 import { cors } from '@elysiajs/cors';
 import { node } from '@elysiajs/node';
-import { openapi } from '@elysiajs/openapi';
-import { auth } from '@workspace/auth/server';
+import { fromTypes, openapi } from '@elysiajs/openapi';
 import { config } from 'dotenv';
 import { Elysia } from 'elysia';
+import betterAuth from './auth.js';
+import users from './users/index.js';
 import { OpenAPI } from './utils.js';
 
 config({ path: '.env.local' });
-
-let _schema: ReturnType<typeof auth.api.generateOpenAPISchema>;
-const getSchema = async () => (_schema ??= auth.api.generateOpenAPISchema());
-
-// user middleware (compute user and session and pass to routes)
-const betterAuth = new Elysia({ name: 'better-auth' })
-  .mount(auth.handler)
-  .macro({
-    auth: {
-      async resolve({ status, request: { headers } }) {
-        const session = await auth.api.getSession({
-          headers,
-        });
-        if (!session) return status(401, 'Unauthorized');
-        return {
-          user: session.user,
-          session: session.session,
-        };
-      },
-    },
-  });
-
-const profile = new Elysia()
-  .use(betterAuth)
-  .onBeforeHandle(({ cookie, status }) => {
-    if (!cookie) {
-      throw status(401, 'Unauthorized');
-    }
-  })
-  .trace(async ({ onHandle }) => {
-    onHandle(({ begin, onStop }) => {
-      onStop(({ end }) => {
-        console.log('handle took', end - begin, 'ms');
-      });
-    });
-  })
-  .get('/profile', ({ user }) => 'Hi there!', { auth: true });
 
 const app = new Elysia({ adapter: node() })
   .use(
@@ -62,50 +26,24 @@ app.use(
       components: await OpenAPI.components,
       paths: await OpenAPI.getPaths(),
     },
+    references: fromTypes(),
   })
 );
 
 // Health check endpoint
 app.get('/', () => ({
-  message: 'Backend is running',
-  timestamp: new Date().toISOString(),
-}));
-
-// API health status
-app.get('/api/health', () => ({
+  message: 'Welcome to the Backend API!',
   status: 'healthy',
   version: '0.0.1',
   uptime: process.uptime(),
 }));
 
-app
-  .trace(async ({ onHandle }) => {
-    onHandle(({ begin, onStop }) => {
-      onStop(({ end }) => {
-        console.log('handle took', end - begin, 'ms');
-      });
-    });
-  })
-  .get(
-    '/users',
-    ({ user, session, cookie }) => {
-      return {
-        message: `Hello, ${user.email}! Your session ID is ${session.id}.`,
-        cookie,
-      };
-    },
-    { auth: true }
-  );
+app.onError(({ error, status }) => {
+  console.error('Error occurred:', error);
+  return { message: error, status };
+});
 
-// app.get(
-//   '/profile',
-//   ({ user }) => {
-//     return { message: `This is your profile, ${user.email}.` };
-//   },
-//   { auth: true }
-// );
-
-app.mount(profile);
+app.use(users);
 
 const port = process.env.PORT || 3000;
 
